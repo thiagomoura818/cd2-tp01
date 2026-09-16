@@ -1,5 +1,8 @@
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 df = pd.read_csv("data/raw/chamada_regular_sisu_2023_1.csv", encoding='latin-1', sep='|')
 dfCopy = df.copy()
@@ -65,8 +68,8 @@ for coluna in dfReduzida.columns:
 print()
 
 # =====
-print("\n3. Remove as linhas onde TP_COTA é NaN")
-dfReduzida.dropna(subset=['TP_COTA'], inplace=True)
+print("\n3. Tratando valores nulos de TP_COTA (Substituindo NaN por 'NAO')")
+dfReduzida['TP_COTA'] = dfReduzida['TP_COTA'].fillna('NAO')
 
 # ==========================================================================================
 print(f"\n{"="*20} ENGENHARIA DE FEATURES {"="*20}")
@@ -177,6 +180,18 @@ dfReduzida.drop(columns=['GRAU', 'TURNO', 'TP_COTA', 'TIPO_MOD_CONCORRENCIA'], i
 print("Colunas tratadas e deletadas: GRAU, TURNO, TP_COTA, TIPO_MOD_CONCORRENCIA")
 
 # =====
+print("\n11. Aplicando StandardScaler nas colunas de notas")
+
+scaler = StandardScaler()
+colunas_para_escalar = ['NOTA_L', 'NOTA_CH', 'NOTA_CN', 'NOTA_M', 'NOTA_R', 'NOTA_CORTE', 'MEDIA_NOTAS']
+colunas_validas = [col for col in colunas_para_escalar if col in dfReduzida.columns]
+
+if colunas_validas:
+    for col in colunas_validas:
+        dfReduzida[col] = dfReduzida[col].fillna(dfReduzida[col].mean())
+    dfReduzida[colunas_validas] = scaler.fit_transform(dfReduzida[colunas_validas])
+
+# =====
 # TESTES - CONSULTAS RAPIDAS - CURIOSIDADE
 
 print("\nPrimeiras linhas:")
@@ -187,3 +202,62 @@ duplicates = dfReduzida.duplicated().sum()
 print(f"Total de linhas duplicadas: {duplicates}")
 
 print(f"\nShape da base atual={dfReduzida.shape}")
+
+# =============== MATRIZ DE CORRELAÇÃO DE PEARSON ========================
+
+
+df_numerico = dfReduzida.select_dtypes(include=['number'])
+
+matriz_corr = df_numerico.corr(method='pearson')
+
+tamanho_janela = max(10, len(df_numerico.columns) * 0.6)
+plt.figure(figsize=(tamanho_janela, tamanho_janela * 0.8))
+
+# 4. Desenha o mapa de calor (Heatmap)
+# cmap='coolwarm': tons azuis para correlação negativa, vermelhos para positiva
+# annot=True: exibe os valores numéricos dentro dos quadrados
+# fmt=".2f": limita os valores a 2 casas decimais
+sns.heatmap(
+    matriz_corr, 
+    annot=True, 
+    fmt=".2f", 
+    cmap='coolwarm', 
+    vmin=-1, 
+    vmax=1, 
+    linewidths=0.5,
+    cbar_kws={"shrink": .8}
+)
+
+# 5. Ajusta os rótulos para não cortarem na imagem
+plt.title('Matriz de Correlação de Pearson', fontsize=16, fontweight='bold', pad=20)
+plt.tight_layout()
+
+# 6. Salva o gráfico em formato PNG de alta resolução (300 DPI)
+plt.savefig('matriz_correlacao.png', dpi=300, bbox_inches='tight')
+
+plt.close()
+
+# ========================= CONC_L ===================================
+
+# 1. Calcula as frequências absolutas (contagem) e relativas (percentual)
+
+colunas_alvo = ['CONC_L', 'CONC_A', 'CONC_B', 'CONC_V']
+
+for coluna in colunas_alvo:
+    if coluna not in dfReduzida: 
+        print(f"Coluna {coluna} nao existe!")
+    else: 
+        contagem = dfReduzida[coluna].value_counts(dropna=False)
+        percentual = dfReduzida[coluna].value_counts(normalize=True, dropna=False) * 100
+
+        # 2. Exibe o cabeçalho organizado
+        print(f"=== DISTRIBUIÇÃO DA COLUNA: {coluna} ===")
+        print(f"{'VALOR':<10} | {'CONTAGEM':<12} | {'PERCENTUAL'}")
+        print("-" * 40)
+
+        # 3. Varre os valores distintos encontrados e imprime formatado
+        for valor, qtd in contagem.items():
+            pct = percentual[valor]
+            # Se o valor for nulo, exibe como 'NaN' para facilitar a leitura
+            nome_valor = "NaN" if pd.isna(valor) else str(valor)
+            print(f"{nome_valor:<10} | {qtd:<12,} | {pct:.2f}%")
