@@ -59,7 +59,10 @@ Para executar os códigos (seja os notebooks ou os módulos em python), é recom
 ## 🚀 Como Utilizar o Projeto
 
 ### 1. Coloque os Dados
-Antes de rodar os algoritmos, obtenha o arquivo `chamada_regular_sisu_2023_1.csv` e coloque-o **obrigatoriamente** dentro da pasta `data/raw/`. 
+Antes de rodar os algoritmos, obtenha o arquivo [`chamada_regular_sisu_2023_1.csv`](https://drive.google.com/file/d/14Vm750yRvZSvPGf_ZOw3YYgH5MvNFfs9/view?usp=sharing) e coloque-o **obrigatoriamente** dentro da pasta `data/raw/`. 
+
+- Para uma inspeção da base de dados original, sem manipulações, execute o arquivo `src\database_analysis.py`.
+- Para reproduzir a limpeza dos dados, tratamentos e divisão em conjunto de treino e teste, execute os arquivos `src\preprocessingID.py`. No qual ID pode ser ou 1 ou 2 ou 3, de acordo com os casos abordados no trabalho. As divisões de base resultante de cada arquivo de pre-processamento são salvar automaticamente dentro da respectiva pasta `data/case0ID/`.
 
 ### 2. Rodando os Jupyter Notebooks
 Como a especificação do trabalho pede que o arquivo submetido seja `.ipynb` executado de ponta a ponta, os notebooks foram segmentados por domínio. Para abrir:
