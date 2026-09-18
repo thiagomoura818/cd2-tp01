@@ -3,3 +3,6 @@ venv/
 .idea/
 notebooks/data/
 notebooks/images/
+# MLflow
+mlruns/
+*.db

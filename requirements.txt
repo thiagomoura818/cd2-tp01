@@ -8,3 +8,5 @@ seaborn
 scipy
 mlxtend
 tensorflow
+mlflow
+imbalanced-learn
