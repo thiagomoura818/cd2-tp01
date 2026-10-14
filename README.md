@@ -54,28 +54,29 @@ Para executar os códigos (seja os notebooks ou os módulos em python), é recom
    pip install -r requirements.txt
    ```
 
----
+## Decisões principais por questão
 
-## 🚀 Como Utilizar o Projeto
+**Associação (notebook 02)**
+- Amostra de 150 mil linhas (`random_state=42`): a base inteira não cabe no Apriori; a amostra preserva as proporções (diferenças de até 0,002).
+- Nulos de `TP_COTA` (54,7%) viram `"Indefinido"`: o nulo ocorre exatamente quando a modalidade não é `L` (Lei de Cotas).
+- `CANDIDATO_LOCAL` = `Mesma_UF` se `UF_CANDIDATO == UF_CAMPUS`, senão `Outra_UF`.
+- Nota em 3 categorias por **tercis** (`pd.qcut`, cortes em 539,58 e 617,66): grupos de mesmo tamanho. Com `pd.cut` (largura igual) ficaria 0,4% / 83,2% / 16,4%.
+- Suporte mínimo 0,01 (4.123 itemsets) e confiança mínima 0,6 (6.188 regras), escolhidos por tabelas de calibração.
+- Filtros: Lift > 1; sem regras que usam `TP_COTA` e `TIPO_MOD_CONCORRENCIA` juntas; sem redundantes (ganho mínimo de 0,02 de confiança sobre a regra mais simples, antecedente de até 3 itens); sem a modalidade `B` (bonificação regional); uma regra por itemset. Resultado final: 187 regras.
 
-### 1. Coloque os Dados
-Antes de rodar os algoritmos, obtenha o arquivo [`chamada_regular_sisu_2023_1.csv`](https://drive.google.com/file/d/14Vm750yRvZSvPGf_ZOw3YYgH5MvNFfs9/view?usp=sharing) e coloque-o **obrigatoriamente** dentro da pasta `data/raw/`. 
+**Classificação (notebook 03)**
+- Apenas aprovados (`APROVADO == 'S'`) com `MATRICULA` em `EFETIVADA` ou `NÃO COMPARECEU` (205.530 candidatos, classes ~50/50).
+- Divisão estratificada 70/15/15; imputação, padronização (`StandardScaler`) e One-Hot ajustados só no treino (sem vazamento).
+- Atributos criados: idade, margem de aprovação, razão classificação/vagas, mesma UF, distância candidato-campus (Haversine com coordenadas do IBGE) e estatísticas das notas.
+- Corte de decisão pelo índice de Youden na validação; melhor experimento escolhido pela AUC de validação; teste só para relatar.
 
-- Para uma inspeção da base de dados original, sem manipulações, execute o arquivo `src\database_analysis.py`.
-
-### 2. Rodando os Jupyter Notebooks
-Como a especificação do trabalho pede que o arquivo submetido seja `.ipynb` executado de ponta a ponta, os notebooks foram segmentados por domínio. Para abrir:
-
-```bash
-# Com o seu venv ativo:
-jupyter notebook
-```
-Acesse a pasta `notebooks/` pelo seu navegador e execute, na ordem:
-- `01_agrupamento.ipynb`
-- `02_regras_associacao.ipynb` 
-- `03_classificacao_mlp.ipynb`
-
-### 3. Garantindo a Reprodutibilidade
-Conforme especificação, todas as instâncias que utilizam aleatoriedade (padronização, quebras em treino/teste e inicialização de pesos nas MLPs) precisam manter uma mesma *seed*. No projeto, as sementes foram fixadas como **42** (`random_state = 42` e `tf.random.set_seed(42)`).
+**Agrupamento (notebook 01)**
+- Somente as 5 notas brutas, padronizadas com `StandardScaler`; perfilamento na escala original.
 
 ---
+
+## Limitações conhecidas
+
+- A base tem uma linha por candidatura: o mesmo candidato pode aparecer duas vezes (opção 1 e 2). As regras e os modelos descrevem candidaturas, não pessoas.
+- Regras de associação mostram co-ocorrência, não causalidade.
+- A distância do notebook 03 usa o município (não o endereço) e depende de nomes que casam com a base do IBGE (baixada de um CSV público no GitHub; precisa de internet na primeira execução).
